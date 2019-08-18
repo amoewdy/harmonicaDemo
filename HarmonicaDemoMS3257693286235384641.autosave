@@ -1,0 +1,329 @@
+import ddf.minim.*;
+import ddf.minim.analysis.*;
+ 
+Minim minim;
+AudioInput envSound;
+AudioPlayer song;
+FFT fft;
+FFT fft_song;
+
+//env
+float specLow1 = 0.03; // 3%
+float specMid1 = 0.125;  // 12.5%
+float specHi1 = 0.2;   // 20%
+
+//music
+float specLow2 = 0.03; // 3%
+float specMid2 = 0.125;  // 12.5%
+float specHi2= 0.20;   // 20%
+
+//env
+float scoreLow1 = 0;
+float scoreMid1 = 0;
+float scoreHi1 = 0;
+//music
+float scoreLow2 = 0;
+float scoreMid2 = 0;
+float scoreHi2 = 0;
+
+float oldScoreLow1 = scoreLow1;
+float oldScoreMid1 = scoreMid1;
+float oldScoreHi1 = scoreHi1;
+
+float oldScoreLow2 = scoreLow2;
+float oldScoreMid2 = scoreMid2;
+float oldScoreHi2 = scoreHi2;
+
+// Softening value, used to extend visualization of a sound event
+float scoreDecreaseRate = 25;
+
+
+int nbCubes;
+Cube[] cubes_env;
+Cube[] cubes_anc;
+
+//number of walls
+int nbMurs = 500;
+Mur[] murs;
+
+//GUI space
+float GUIHeight = 200;
+
+//starting position of subes
+float startingZ = -10000;
+float maxZ = 1000;
+
+//transparancy for dim color
+float dim_color = 2;
+
+
+
+void setup()
+{
+  fullScreen(P3D);
+  minim = new Minim(this);
+  envSound = minim.getLineIn();
+  song = minim.loadFile("RainRabbit.mp3"); 
+  fft = new FFT(envSound.bufferSize(), envSound.sampleRate());
+  fft_song = new FFT(song.bufferSize(), song.sampleRate());
+  
+  //add more object as music input?
+  nbCubes = (int)(fft.specSize()*specHi1);
+  cubes_env = new Cube[nbCubes];
+  cubes_anc = new Cube[nbCubes];
+  murs = new Mur[nbMurs];
+  
+  //generate nbCubes 'pair' of objects.
+  for (int i = 0; i < nbCubes; i++) {
+    float x = random(0, width/2-70);
+    float y = random(0, height);
+    float z = random(startingZ, maxZ);
+    
+    //Donner au cube une rotation aléatoire
+    float rotX = random(0, 1);
+    float rotY = random(0, 1);
+    float rotZ = random(0, 1);
+  cubes_env[i] = new Cube(x,y,z,rotX,rotY,rotZ); 
+  cubes_anc[i]= new Cube(width-x,y,z,1-rotX,rotY,rotZ);
+  }
+  
+  //the reflective walls TBC
+ 
+   background(0);
+   //start the music, repeat
+   //song.play();
+}
+
+void draw()
+{
+  fft_song.forward(song.mix);
+  fft.forward(envSound.mix);
+  oldScoreLow1 = scoreLow1;
+  oldScoreMid1 = scoreMid1;
+  oldScoreHi1 = scoreHi1;
+  
+  oldScoreLow2 = scoreLow2;
+  oldScoreMid2 = scoreMid2;
+  oldScoreHi2 = scoreHi2;
+  
+  scoreLow2 = 0;
+  scoreMid2 = 0;
+  scoreHi2 = 0;
+  //env
+  for(int i = 0; i < fft.specSize()*specLow1; i++)
+  {
+    scoreLow1 += fft.getBand(i);
+  }
+  //music
+    for(int i = 0; i < fft_song.specSize()*specLow1; i++)
+  {
+    scoreLow2 += fft.getBand(i);
+  }
+  
+  
+  for(int i = (int)(fft.specSize()*specLow1); i < fft.specSize()*specMid1; i++)
+  {
+    scoreMid1 += fft.getBand(i);
+  }
+    for(int i = (int)(fft_song.specSize()*specLow1); i < fft_song.specSize()*specMid1; i++)
+  {
+    scoreMid2 += fft.getBand(i);
+  }
+  
+  
+  for(int i = (int)(fft.specSize()*specMid1); i < fft.specSize()*specHi1; i++)
+  {
+    scoreHi1 += fft.getBand(i);
+  }
+    for(int i = (int)(fft_song.specSize()*specMid1); i < fft_song.specSize()*specHi1; i++)
+  {
+    scoreHi2 += fft.getBand(i);
+  }
+  
+  if (oldScoreLow1 > scoreLow1) {
+    scoreLow1 = oldScoreLow1 - scoreDecreaseRate;
+  }
+  
+  if (oldScoreMid1 > scoreMid1) {
+    scoreMid1 = oldScoreMid1 - scoreDecreaseRate;
+  }
+  
+  if (oldScoreHi1 > scoreHi1) {
+    scoreHi1 = oldScoreHi1 - scoreDecreaseRate;
+  }
+  if (oldScoreLow2 > scoreLow2) {
+    scoreLow2 = oldScoreLow2 - scoreDecreaseRate;
+  }
+  
+  if (oldScoreMid2 > scoreMid2) {
+    scoreMid2 = oldScoreMid2 - scoreDecreaseRate;
+  }
+  
+  if (oldScoreHi2 > scoreHi2) {
+    scoreHi2 = oldScoreHi2 - scoreDecreaseRate;
+  }
+  
+  //TBC score of music object
+  //float scoreGlobal = 0.66*scoreLow1 + 0.8*scoreMid1 + 1*scoreHi1;
+  float scoreGlobal = 0.66*scoreLow1 + 0.8*scoreMid1 + 1*scoreHi1;
+  background(scoreLow1/100, scoreMid1/100, scoreHi1/100);
+    for(int i = 0; i < nbCubes; i++)
+  {
+    //Valeur de la bande de fréquence
+    float bandValue = fft.getBand(i);
+    
+    // The color is represented as: red for bass, green for medium sounds and blue for high.
+    // Opacity is determined by the volume of the tape and the overall volume.
+    cubes_env[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,false);
+    cubes_anc[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,true);
+    
+  }
+  //zero?
+  float previousBandValue = fft.getBand(0);
+  
+  //Distance between each line point, negative because on the z dimension
+  float dist = -30;
+  //Multiply the height by this constant
+  float heightMult_left = 2;
+  float heightMult_right = 0.4;
+
+  strokeWeight(1);
+  stroke(255);
+  line(width/2,0,width/2,height-GUIHeight);
+  for(int i = 1; i < fft.specSize(); i++)
+  {
+    //float bandValue = fft.getBand(i)*(1 + (i/50));
+    float bandValue = fft.getBand(i)*(1+(i/20));
+    stroke(100+scoreLow1, 100+scoreMid1, 100+scoreHi1, 255-i);
+    strokeWeight(1 + (scoreGlobal/70));
+    //lower left line
+    line(0, height-GUIHeight-(previousBandValue*heightMult_left), dist*(i-1), 0, height-GUIHeight-(bandValue*heightMult_left), dist*i); 
+    line((previousBandValue*heightMult_left), height-GUIHeight, dist*(i-1), (bandValue*heightMult_left), height-GUIHeight, dist*i);
+    line(0, height-GUIHeight-(previousBandValue*heightMult_left), dist*(i-1), (bandValue*heightMult_left), height-GUIHeight, dist*i); 
+    
+    //upper left line
+    line(0, (previousBandValue*heightMult_left), dist*(i-1), 0, (bandValue*heightMult_left), dist*i);
+    line((previousBandValue*heightMult_left), 0, dist*(i-1), (bandValue*heightMult_left), 0, dist*i);
+    line(0, (previousBandValue*heightMult_left), dist*(i-1), (bandValue*heightMult_left), 0, dist*i);
+    
+    //lower  right line
+    line(width, height-GUIHeight-(previousBandValue*heightMult_right), dist*(i-1), width, height-GUIHeight-(bandValue*heightMult_right), dist*i); 
+    line(width - (previousBandValue*heightMult_right), height-GUIHeight, dist*(i-1), width - (bandValue*heightMult_right), height-GUIHeight, dist*i);
+    line(width , height-GUIHeight-(previousBandValue*heightMult_right), dist*(i-1), width - (bandValue*heightMult_right), height-GUIHeight, dist*i); 
+    
+    //upper right line
+    line(width, (previousBandValue*heightMult_right), dist*(i-1), width, (bandValue*heightMult_right), dist*i);
+    line(width - (previousBandValue*heightMult_right), 0, dist*(i-1), width - (bandValue*heightMult_right), 0, dist*i);
+    line(width, (previousBandValue*heightMult_right), dist*(i-1), width - (bandValue*heightMult_right), 0, dist*i);
+    
+    line(width/2,0, dist*(i-1),width/2, 0, dist*i);
+    line(width/2,height-GUIHeight, dist*(i-1),width/2, height-GUIHeight, dist*i);
+    previousBandValue = bandValue;
+  }
+  
+  
+}
+
+
+class Cube {
+  //infinit Z index
+  
+  //positions
+  float x, y, z;
+  float rotX, rotY, rotZ;
+  float sumRotX, sumRotY, sumRotZ;
+  
+  //Constructeur
+  Cube(float loc_x,float loc_y,float loc_z,float rot_x,float rot_y,float rot_z) {
+    //ramdom location
+    //x = random(0, width/2-70);
+    //y = random(0, height);
+    //z = random(startingZ, maxZ);
+    
+    ////Donner au cube une rotation aléatoire
+    //rotX = random(0, 1);
+    //rotY = random(0, 1);
+    //rotZ = random(0, 1);
+    x = loc_x;
+    y = loc_y;
+    z = loc_z;
+    rotX = rot_x;
+    rotY = rot_y;
+    rotZ = rot_z;  
+  }
+  
+  
+  void display(float scoreLow, float scoreMid, float scoreHi, float intensity, float scoreGlobal, boolean dim) {
+    color displayColor = color(scoreLow*0.67, scoreMid*0.67, scoreHi*0.67, intensity*5);
+    //the 'after' cubes is always dim but the speed remain the same to creat the sense of realtime processing
+    if(dim==false){
+    fill(displayColor, 255);}
+    else{
+    fill(displayColor, 255/dim_color);
+    }
+    
+    color strokeColor = color(255, 150-(20*intensity));
+    stroke(strokeColor);
+    strokeWeight(1 + (scoreGlobal/300));
+    
+    //Create a transformation matrix to perform rotations, enlargements
+    pushMatrix();
+    translate(x, y, z);
+    
+    // Calculation of the rotation according to the intensity for the cube
+    if(dim==false){
+    sumRotX += intensity*(rotX/1000);}
+    else{
+    sumRotX -= intensity*(rotX/1000);  
+    }
+    sumRotY += intensity*(rotY/1000);
+    sumRotZ += intensity*(rotZ/1000);
+    
+    //Application de la rotation
+    rotateX(sumRotX);
+    rotateY(sumRotY);
+    rotateZ(sumRotZ);
+    
+    //Creation of the box, variable size according to the intensity for the cube
+    box(100+(intensity/2));
+    
+    //Application of the matrix
+    popMatrix();
+    
+    //Déplacement Z
+    z+= (1+(intensity/5)+(pow((scoreGlobal/150), 2)));
+    
+    //Replace the box at the back when it is no longer visible
+    //how to control the 'next' pair of object
+    if (z >= maxZ) {
+      x = random(0, width/2-70);
+      y = random(0, height);
+      z = startingZ;
+    }
+  }
+}
+
+
+
+
+//TBC
+class Mur {
+}
+
+void keyPressed()
+{
+  if ( key == 'm' || key == 'M' )
+  {
+    if ( envSound.isMonitoring() )
+    {
+      envSound.disableMonitoring();
+      System.out.println("disableMonitoring");  
+    }
+    else
+    {
+      envSound.enableMonitoring();
+      System.out.println("enableMonitoring"); 
+    }
+  }
+}
+  
