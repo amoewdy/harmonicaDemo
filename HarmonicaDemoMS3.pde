@@ -32,8 +32,7 @@ static float[] feature_nick = {1.0, 0.09482261, 0.71196096, 0.33469795, 0.009542
                                0.91026605, 0.76172873, 0.09552055, 0.05058804};
 //Gain dictionary
 Map gainDict;
-
-
+//GUI font
 PFont label,textBlack,titleBlack;
 
 //noise cancelling rate
@@ -44,18 +43,18 @@ String scenario;
 String event;
 String music;
 int kws_count = 0;
-
-
+// Serial readings
+ArrayList<String> scenarios = new ArrayList();
+ArrayList<Float> readings = new ArrayList();
+Map gainDict = new HashMap(); 
 //env
 float specLow1 = 0.03; // 3%
 float specMid1 = 0.125;  // 12.5%
 float specHi1 = 0.2;   // 20%
-
 //music
 float specLow2 = 0.03; // 3%
 float specMid2 = 0.125;  // 12.5%
 float specHi2= 0.2;   // 20%
-
 //env
 float scoreLow1 = 0;
 float scoreMid1 = 0;
@@ -73,7 +72,7 @@ float oldScoreLow2 = scoreLow2;
 float oldScoreMid2 = scoreMid2;
 float oldScoreHi2 = scoreHi2;
 
-// Softening value, used to extend visualization of a sound event
+// To extend visualization of a sound event
 float scoreDecreaseRate = 25;
 
 int nbCubes;
@@ -86,12 +85,6 @@ Tetrahedron[] tetrahedrons;
 //number of walls
 int nbMurs = 500;
 Mur[] murs;
-
-
-
-// List<String> scenarios = Arrays.asList("Home", "Commute", "Terminal","Flight");
-ArrayList<String> scenarios = new ArrayList();
-ArrayList<Float> readings = new ArrayList();
 
 //GUI space
 float GUIHeight = 200;
@@ -110,7 +103,13 @@ void setup()
   scenario = "-";
   event = "-";
   music = "Play";
-  //length
+  minim = new Minim(this);
+  envSound = minim.getLineIn();
+  song = minim.loadFile("RainRabbit.mp3"); 
+  fft = new FFT(envSound.bufferSize(), envSound.sampleRate());
+  fft_song = new FFT(song.bufferSize(), song.sampleRate());
+
+  //list length
   for(int i=0;i<48;i++){
     readings.add(0);
   }
@@ -120,23 +119,17 @@ void setup()
   scenarios.add("Terminal");
   scenarios.add("Flight");
   // Gain cmd dictionary
-  Map gainDict = new HashMap(); 
-      gainDict.put(20, (byte)0x00);
-      gainDict.put(21, (byte)0x01);
-      gainDict.put(22, (byte)0x02);
-      gainDict.put(23, (byte)0x03);
-      gainDict.put(24, (byte)0x04);
-      gainDict.put(25, (byte)0x05);
-      gainDict.put(26, (byte)0x06);
-      gainDict.put(27, (byte)0x07);
-      gainDict.put(28, (byte)0x08);
+  gainDict.put(20, (byte)0x00);
+  gainDict.put(21, (byte)0x01);
+  gainDict.put(22, (byte)0x02);
+  gainDict.put(23, (byte)0x03);
+  gainDict.put(24, (byte)0x04);
+  gainDict.put(25, (byte)0x05);
+  gainDict.put(26, (byte)0x06);
+  gainDict.put(27, (byte)0x07);
+  gainDict.put(28, (byte)0x08);
 
-  minim = new Minim(this);
-  envSound = minim.getLineIn();
-  song = minim.loadFile("RainRabbit.mp3"); 
-  fft = new FFT(envSound.bufferSize(), envSound.sampleRate());
-  fft_song = new FFT(song.bufferSize(), song.sampleRate());
-  //read input
+  // read input TBC 
   myPortRead = new Serial(this, Serial.list()[0], 9600);
   myport = new Serial(this,"COM7",115200);
   // List all the available serial ports:
@@ -149,28 +142,25 @@ void setup()
     .setValue(0)
     .setPosition(width/2,height-150)
     .setSize(50,50)
-    //  .setImages(imgs)
-    //  .updateSize()
-  ;
-    cp5.addButton("pause")
-      .setValue(10)
-      .setPosition(width/2+70,height-150)
-      .setSize(50,50)
-      ;
+    ;
+
+  cp5.addButton("pause")
+    .setValue(10)
+    .setPosition(width/2+70,height-150)
+    .setSize(50,50)
+    ;
+
   dropList1 = cp5.addDropdownList("gain")
-          .setPosition(width/2+150, height-150)
-          .setSize(200,200);
-          
-  customizeGain(dropList1); // customize the first list
-  
-  // create a second DropdownList
+    .setPosition(width/2+150, height-150)
+    .setSize(200,200);         
+  customizeGain(dropList1); 
+
   dropList2 = cp5.addDropdownList("keyWord")
           .setPosition(width/2+400, height-150)
           .setSize(200,200);
-  customizeWord(dropList2); // customize the second list
+  customizeWord(dropList2);
 
-
-  //add more object as music input
+  //add more objects as music input
   nbCubes = (int)(fft.specSize()*specHi1);
   cubes_env = new Cube[nbCubes];
   cubes_anc = new Cube[nbCubes];
@@ -178,7 +168,7 @@ void setup()
   nbTetrahedrons = (int)(fft.specSize()*specHi2);
   tetrahedrons = new Tetrahedron[nbTetrahedrons];
   
-  //generate nbCubes 'pair' of objects.
+  //generate pairs of objects.
   for (int i = 0; i < nbCubes; i++) {
     float x = random(0, width/2-70);
     float y = random(0, height-GUIHeight);
@@ -198,12 +188,10 @@ void setup()
   for (int i = 0; i < nbMurs; i+=6) {
    murs[i] = new Mur(0, (height-GUIHeight)/2, 10, height-GUIHeight); 
   }
-  
   //walls right
   for (int i = 1; i < nbMurs; i+=6) {
    murs[i] = new Mur(width, (height-GUIHeight)/2, 10, height-GUIHeight); 
   }
-  
   //walls bottom left
   for (int i = 2; i < nbMurs; i+=6) {
    murs[i] = new Mur(width/4, height-GUIHeight, width/2, 10); 
@@ -224,7 +212,7 @@ void setup()
   textBlack = createFont("HelveticaNeue-Bold", 20);
   titleBlack= createFont("HelveticaNeue-Bold", 26);
   background(0);
-   //start the music, repeat
+  //start the music, repeat
   song.play();
 }
 
@@ -324,7 +312,7 @@ void draw()
         cubes_anc[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,true,width-next_x,next_y);
       }
     }
-  //zero?
+
   float previousBandValue = fft.getBand(0);
   
   //Distance between each line point, negative because on the z dimension
@@ -369,8 +357,7 @@ void draw()
   
     for(int i = 0; i < nbMurs; i++)
   {
-    //TBC change the reflective light on the right side to demonstrate the illuminated music object
-    //* float intensity = fft.getBand(i%((int)(fft.specSize()*specHi)));
+    // * float intensity = fft.getBand(i%((int)(fft.specSize()*specHi)));
     float intensity = fft.getBand(i);
     println(intensity);
     float intensity_music = fft_song.getBand(i);
@@ -380,11 +367,11 @@ void draw()
     murs[i].display(scoreLow1, scoreMid1, scoreHi1, intensity, scoreGlobal);      
     }
   }
-  // 3d code is above
+  // 3d code above
   hint(DISABLE_DEPTH_TEST);
   camera();
   noLights();
-  // 2D code
+  // 2d code following
   fill(0,0,0,150);
   rect(0,height-GUIHeight,width, height);
 
@@ -406,12 +393,12 @@ void draw()
 
   hint(ENABLE_DEPTH_TEST);
 }
+
 class Tetrahedron{
-  //Math.sqrt(x)
   float x,y,z;
   float rotX, rotY, rotZ;
   float sumRotX,sumRotY,sumRotZ;
-  //Constructor. Generated with ramdom position
+  //Generate tetrahedrons with ramdom position
   Tetrahedron(){
     x = random(width/2+90,width);
     y = random(0, height-GUIHeight);
@@ -466,12 +453,12 @@ class Tetrahedron{
     
     //Application of the matrix
     popMatrix();
-    
+
     //TBC, need to be paused when needed
     z+= (1+(intensity/5)+(pow((scoreGlobal/150), 2)));
     
     //Replace the box at the back when it is no longer visible
-    //how to control the 'next' pair of object
+    //how to control the latest object?
     if (z >= maxZ) {
       x = random(width/2+90,width);
       y = random(0, height-GUIHeight);
@@ -482,24 +469,12 @@ class Tetrahedron{
 }
 
 class Cube {
-  //infinit Z index
-  
-  //positions
+
   float x, y, z;
   float rotX, rotY, rotZ;
   float sumRotX, sumRotY, sumRotZ;
   
-  //Constructeur
   Cube(float loc_x,float loc_y,float loc_z,float rot_x,float rot_y,float rot_z) {
-    //ramdom location
-    //x = random(0, width/2-70);
-    //y = random(0, height);
-    //z = random(startingZ, maxZ);
-    
-    ////Donner au cube une rotation aléatoire
-    //rotX = random(0, 1);
-    //rotY = random(0, 1);
-    //rotZ = random(0, 1);
     x = loc_x;
     y = loc_y;
     z = loc_z;
@@ -507,7 +482,6 @@ class Cube {
     rotY = rot_y;
     rotZ = rot_z;  
   }
-  
   
   void display(float scoreLow, float scoreMid, float scoreHi, float intensity, float scoreGlobal, boolean dim, float next_x,float next_y) {
     color displayColor = color(scoreLow*0.67, scoreMid*0.67, scoreHi*0.67, intensity*5);
@@ -538,9 +512,7 @@ class Cube {
     sumRotY -= intensity*((PI-rotY)/1000);
     sumRotZ -= intensity*((PI-rotZ)/1000);  
     }
-    // sumRotX += intensity*(rotX/1000);
-    
-    //Application de la rotation
+
     rotateX(sumRotX);
     rotateY(sumRotY);
     rotateZ(sumRotZ);
@@ -552,15 +524,9 @@ class Cube {
     //Application of the matrix
     popMatrix();
     
-    //Déplacement Z
     z+= (1+(intensity/5)+(pow((scoreGlobal/150), 2)));
     
-    //Replace the box at the back when it is no longer visible
-    //how to control the 'next' pair of object
     if (z >= maxZ) {
-      // x = random(0, width/2-70);
-      // y = random(0, height);
-      // z = startingZ;
       x = next_x;
       y = next_y;
       z = startingZ;
@@ -569,14 +535,13 @@ class Cube {
   }
 }
 
-//TBC
 class Mur {
   float startingZ = -10000;
   float maxZ = 50;
 
   float x, y, z;
   float sizeX, sizeY;
-  //constructer
+
   Mur(float x, float y, float sizeX, float sizeY) {
     //Make the line appear at the specified place
     this.x = x;
@@ -584,14 +549,11 @@ class Mur {
     //Random depth
     this.z = random(startingZ, maxZ);  
     
-    //We determine the size because the walls on the floors have a different size than those on the sides
     this.sizeX = sizeX;
     this.sizeY = sizeY;
   }
   
-  //Display function
   void display(float scoreLow, float scoreMid, float scoreHi, float intensity, float scoreGlobal) {
-    // Color determined by low, medium and high sounds
     color displayColor = color(scoreLow*0.67, scoreMid*0.67, scoreHi*0.67, scoreGlobal);
     
     //Make lines disappear in the distance to give an illusion of fog
@@ -614,7 +576,6 @@ class Mur {
     translate(x, y, z);
     scale(sizeX, sizeY, 10);
     
-
     box(1);
     popMatrix();
     
@@ -649,14 +610,9 @@ public class Featrue
 }
 
 void customizeGain(DropdownList ddl) {
-  // a convenience function to customize a DropdownList
   ddl.setBackgroundColor(color(0));
   ddl.setItemHeight(30);
   ddl.setBarHeight(15);
-  //ddl.captionLabel().set("dropdown");
-  //ddl.captionLabel().style().marginTop = 3;
-  //ddl.captionLabel().style().marginLeft = 3;
-  //ddl.valueLabel().style().marginTop = 3;
    for (int i=0;i<9;i++) {
     ddl.addItem("0x0"+i, i+20);
     }
@@ -692,7 +648,7 @@ void serialEvent(Serial port) {
     }
     readings.removeRange(0,6);
     
-    // delayed keyword result = =
+    // Increase display time of keyword spotting result
     if(window>0.5 && kwsres>0.5){ 
       kws=true;
       event = "Name Called";
@@ -705,8 +661,7 @@ void serialEvent(Serial port) {
         event = "-";
       }
     }
-    // select scene
-    // float[] sum;
+
     float sum_home = 0;
     float sum_commute = 0;
     float sum_terminal = 0;
@@ -723,18 +678,6 @@ void serialEvent(Serial port) {
     for(int i=5;i<48;i+=6){
       sum_flight += readings.get(i);
     }
-    // for(int i=2;i<48;i+=6){
-    //   sum_home += readings.get(i);
-    // }
-    // for(int i=3;i<48;i+=6){
-    //   sum_commute += readings.get(i);
-    // }
-    // for(int i=4;i<48;i+=6){
-    //   sum_terminal += readings.get(i);
-    // }
-    // for(int i=5;i<48;i+=6){
-    //   sum_flight += readings.get(i);
-    // }
     float maxChancei = 0;
     float maxValue = Math.max(Math.max(Math.max(sum_home,sum_commute),sum_terminal),sum_flight);
     if(sum_home == maxValue){
@@ -780,9 +723,10 @@ void controlEvent(ControlEvent theEvent) {
   }
 }
 
-//monitor computer audio output
+
 void keyPressed()
 {
+  // Monitor computer audio output
   if ( key == 'm' || key == 'M' )
   {
     if ( envSound.isMonitoring() )
