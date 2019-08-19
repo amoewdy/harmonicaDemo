@@ -30,7 +30,8 @@ static float[] feature_nick = {1.0, 0.09482261, 0.71196096, 0.33469795, 0.009542
                                0.28769407, 0.30631243, 0.21994837, 0.52510142, 0.20503161,
                                0.92725837, 0.88805662, 0.91923468, 0.92248686, 0.93615086,
                                0.91026605, 0.76172873, 0.09552055, 0.05058804};
-
+//Gain dictionary
+Map gainDict;
 
 
 PFont label,textBlack,titleBlack;
@@ -113,11 +114,23 @@ void setup()
   for(int i=0;i<48;i++){
     readings.add(0);
   }
-
+  //scenario list
   scenarios.add("Home");
   scenarios.add("Commute");
   scenarios.add("Terminal");
   scenarios.add("Flight");
+  // Gain cmd dictionary
+  Map gainDict = new HashMap(); 
+      gainDict.put(20, (byte)0x00);
+      gainDict.put(21, (byte)0x01);
+      gainDict.put(22, (byte)0x02);
+      gainDict.put(23, (byte)0x03);
+      gainDict.put(24, (byte)0x04);
+      gainDict.put(25, (byte)0x05);
+      gainDict.put(26, (byte)0x06);
+      gainDict.put(27, (byte)0x07);
+      gainDict.put(28, (byte)0x08);
+
   minim = new Minim(this);
   envSound = minim.getLineIn();
   song = minim.loadFile("RainRabbit.mp3"); 
@@ -133,14 +146,14 @@ void setup()
   //GUI elements
   cp5 = new ControlP5(this);
   cp5.addButton("play")
-    .setValue(10)
+    .setValue(0)
     .setPosition(width/2,height-150)
     .setSize(50,50)
     //  .setImages(imgs)
     //  .updateSize()
   ;
     cp5.addButton("pause")
-      .setValue(0)
+      .setValue(10)
       .setPosition(width/2+70,height-150)
       .setSize(50,50)
       ;
@@ -645,7 +658,7 @@ void customizeGain(DropdownList ddl) {
   //ddl.captionLabel().style().marginLeft = 3;
   //ddl.valueLabel().style().marginTop = 3;
    for (int i=0;i<9;i++) {
-    ddl.addItem("0x0"+i, i);
+    ddl.addItem("0x0"+i, i+20);
     }
   //ddl.scroll(0);
   ddl.setColorBackground(color(60));
@@ -656,9 +669,9 @@ void customizeWord(DropdownList ddl) {
   ddl.setBackgroundColor(color(0));
   ddl.setItemHeight(30);
   ddl.setBarHeight(15);
-  ddl.addItem("Cici", 0);
-  ddl.addItem("Jerry", 1);
-  ddl.addItem("Thomas", 2); 
+  ddl.addItem("Cici", 50);
+  ddl.addItem("Jerry",51);
+  ddl.addItem("Thomas", 52); 
   //ddl.scroll(0);
   ddl.setColorBackground(color(60));
   ddl.setColorActive(color(255, 128));
@@ -740,15 +753,32 @@ void serialEvent(Serial port) {
 // Send a capital "A" out the serial port
 // myPortRead.write(65);
 }
+
 //GUI event & cmd
 //start 
 public void play(int theValue) {
   println("play"+theValue);
-  
+  //Start transmission, Send this cmd each time establish connection.
+  myport.write((byte)0x0A);
 }
-
-
-
+//stop
+public void pause(int theValue) {
+  println("pause"+theValue);
+  //Stop transmission
+   myport.write((byte)0x0C);
+}
+void controlEvent(ControlEvent theEvent) {
+  if (theEvent.isGroup()) {
+    // check if the Event was triggered from a ControlGroup
+    println("event from group : "+theEvent.getGroup().getValue()+" from "+theEvent.getGroup());
+  } 
+  else if (theEvent.isController()) {
+    int value = theEvent.getController().getValue();
+    println("event from controller : "+value+" from "+theEvent.getController());
+    // myport.write(new byte[]{(byte)0x0B,(byte)0x05});
+    myport.write(new byte[]{(byte)0x0B,gainDict.get(value)});
+  }
+}
 
 //monitor computer audio output
 void keyPressed()
@@ -766,6 +796,11 @@ void keyPressed()
       System.out.println("enableMonitoring"); 
     }
   }
+  // Set feature to compare. (Select formt the list)
+   if ( key == 'f' || key == 'F' ){
+   feature = new Featrue(feature_nick);  //Prepare data to send.
+   feature.send(myport); //send cmd 0x0D and feature data.
+   }
 }
 
   
