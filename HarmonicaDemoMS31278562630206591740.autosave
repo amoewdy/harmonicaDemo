@@ -2,9 +2,6 @@ import ddf.minim.*;
 import ddf.minim.analysis.*;
 import controlP5.*;
 import processing.serial.*;
-import java.nio.*;
-import processing.serial.*;
-
 
 ControlP5 cp5;
 DropdownList dropList1, dropList2; 
@@ -13,37 +10,15 @@ AudioInput envSound;
 AudioPlayer song;
 FFT fft;
 FFT fft_song;
-Serial myPortRead;
-Serial myport;
-Featrue feature;
-//Feature raw data.
-static float[] feature_nick = {1.0, 0.09482261, 0.71196096, 0.33469795, 0.00954271,
-                               0.42610248, 0.64153486, 0.94590519, 0.54915531, 0.85789977,
-                               0.40761014, 0.8666355, 0.0343089, 0.16187272, 0.84312321,
-                               0.22265605, 0.79967658, 0.19404002, 0.46965828, 0.21927928,
-                               0.67442555, 0.92260194, 0.8119627, 0.72632723, 0.19444464,
-                               0.6557695, 0.94408782, 0.73384134, 0.12572378, 0.52393848,
-                               0.00530087, 0.7705692, 0.71546082, 0.79894306, 0.1434266,
-                               0.02392478, 0.02827022, 0.89833059, 0.70119033, 0.2427583,
-                               0.80574012, 0.64495794, 0.14371673, 0.10288936, 0.1608715,
-                               0.48728477, 0.95233288, 0.3109348, 0.0508005, 0.55836322,
-                               0.28769407, 0.30631243, 0.21994837, 0.52510142, 0.20503161,
-                               0.92725837, 0.88805662, 0.91923468, 0.92248686, 0.93615086,
-                               0.91026605, 0.76172873, 0.09552055, 0.05058804};
-
-
-
+Serial myPort;
 PFont label,textBlack,titleBlack;
 
 //noise cancelling rate
 int anc;
-//GUI text 
 boolean kws;
 String scenario;
 String event;
 String music;
-int kws_count = 0;
-
 
 //env
 float specLow1 = 0.03; // 3%
@@ -86,11 +61,13 @@ Tetrahedron[] tetrahedrons;
 int nbMurs = 500;
 Mur[] murs;
 
+// String[] scenarios[];
+// scenarios[0] = "Home";
+// scenarios[1] = "Commute";
+// scenarios[2] = "Terminal";
+// scenarios[3] = "Flight";
 
-
-// List<String> scenarios = Arrays.asList("Home", "Commute", "Terminal","Flight");
-ArrayList<String> scenarios = new ArrayList();
-ArrayList<Float> readings = new ArrayList();
+ArrayList<String> scenarios = ArrayList.asList("Home", "Commute", "Terminal","Flight");
 
 //GUI space
 float GUIHeight = 200;
@@ -109,31 +86,18 @@ void setup()
   scenario = "-";
   event = "-";
   music = "Play";
-  //length
-  for(int i=0;i<48;i++){
-    readings.add(0);
-  }
-
-  scenarios.add("Home");
-  scenarios.add("Commute");
-  scenarios.add("Terminal");
-  scenarios.add("Flight");
   minim = new Minim(this);
   envSound = minim.getLineIn();
   song = minim.loadFile("RainRabbit.mp3"); 
   fft = new FFT(envSound.bufferSize(), envSound.sampleRate());
   fft_song = new FFT(song.bufferSize(), song.sampleRate());
   //read input
-  myPortRead = new Serial(this, Serial.list()[0], 9600);
-  myport = new Serial(this,"COM7",115200);
-  // List all the available serial ports:
-  printArray(Serial.list());
-  myPortRead.bufferUntil('\n');
-
+  myPort = new Serial(this, Serial.list()[0], 9600);
+  myPort.bufferUntil('\n');
   //GUI elements
   cp5 = new ControlP5(this);
   cp5.addButton("play")
-    .setValue(10)
+    .setValue(0)
     .setPosition(width/2,height-150)
     .setSize(50,50)
     //  .setImages(imgs)
@@ -466,6 +430,8 @@ class Tetrahedron{
     }
 
   }
+
+
 }
 
 class Cube {
@@ -612,29 +578,6 @@ class Mur {
   }
 }
 
-public class Featrue
-{
-  float[] data;
-  Featrue(float[] data)
-  {
-    this.data = data;
-  }
-  byte[] get_bytes()
-  {
-    ByteBuffer byteBuffer = ByteBuffer.allocate(257);
-    byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-    byteBuffer.put((byte)0x0D);
-    for (int i = 0; i != 64; i++)
-    {
-      byteBuffer.putFloat(1 + i * 4, this.data[i]);
-    }
-    return byteBuffer.array();
-  }
-  void send(Serial p){
-    p.write(this.get_bytes());
-  }
-}
-
 void customizeGain(DropdownList ddl) {
   // a convenience function to customize a DropdownList
   ddl.setBackgroundColor(color(0));
@@ -668,89 +611,38 @@ void serialEvent(Serial port) {
   String input = port.readString(); 
   float window;
   float kwsres;
+
   if (input != null) {
     println( "Receiving:" + input);
     float[] vals = float(split(input, ","));
     window = vals[0];
     kwsres = vals[1]; 
-
-    for(int k=0;k<6;k++){
-      readings.add(vals[k]);
-    }
-    readings.removeRange(0,6);
-    
-    // delayed keyword result = =
-    if(window>0.5 && kwsres>0.5){ 
-      kws=true;
-      event = "Name Called";
-    }
-    if(kws==true){
-      kws_count++;
-      if(kws_count>100){
-        kws=false;
-        kws_count=0;
-        event = "-";
-      }
-    }
-    // select scene
-    // float[] sum;
-    float sum_home = 0;
-    float sum_commute = 0;
-    float sum_terminal = 0;
-    float sum_flight = 0;
-    for(int i=2;i<48;i+=6){
-      sum_home += readings.get(i);
-    }
-    for(int i=3;i<48;i+=6){
-      sum_commute += readings.get(i);
-    }
-    for(int i=4;i<48;i+=6){
-      sum_terminal += readings.get(i);
-    }
-    for(int i=5;i<48;i+=6){
-      sum_flight += readings.get(i);
-    }
-    // for(int i=2;i<48;i+=6){
-    //   sum_home += readings.get(i);
-    // }
-    // for(int i=3;i<48;i+=6){
-    //   sum_commute += readings.get(i);
-    // }
-    // for(int i=4;i<48;i+=6){
-    //   sum_terminal += readings.get(i);
-    // }
-    // for(int i=5;i<48;i+=6){
-    //   sum_flight += readings.get(i);
-    // }
-    float maxChancei = 0;
-    float maxValue = Math.max(Math.max(Math.max(sum_home,sum_commute),sum_terminal),sum_flight);
-    if(sum_home == maxValue){
-      scenario = scenarios.get(1);
-    }
-    else if(sum_commute == maxValue){
-      scenario = scenarios.get(2);
-    }
-    else if(sum_terminal == maxValue){
-      scenario = scenarios.get(3);
+    if(window>0.5 && kwsres>0.5){
+    kws = true;
+    event = "Name Called";
     }
     else{
-      scenario = scenarios.get(4);
+    kws = false;
+    event = "-";
     }
+    float maxChance = vals[2];
+    int maxChangei = 2;
+    for(int j=3;j<6;j++){
+    if(vals[j]>maxChance){
+      maxChance = vals[j];
+      maxChangei = j;
+      }
+    }
+    //set scenario
+    if(maxChance>0.5){
+    scenario = scenarios.get(maxChangei-2);
+    }  
   }
-// Send a capital "A" out the serial port
-// myPortRead.write(65);
-}
-//GUI event & cmd
-//start 
-public void play(int theValue) {
-  println("play"+theValue);
-  
+
+  port.write(65);
 }
 
-
-
-
-//monitor computer audio output
+//monitor computer output
 void keyPressed()
 {
   if ( key == 'm' || key == 'M' )
