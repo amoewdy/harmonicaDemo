@@ -14,7 +14,7 @@ AudioPlayer song;
 FFT fft;
 FFT fft_song;
 Serial myPortRead;
-// Serial myport;
+Serial myport;
 Featrue feature;
 //Feature raw data.
 static float[] feature_nick = {1.0, 0.09482261, 0.71196096, 0.33469795, 0.00954271,
@@ -100,7 +100,6 @@ float dim_color = 2;
 void setup()
 {
   fullScreen(P3D);
-  //size(1000,1000,P3D);
   kws = false;
   scenario = "-";
   event = "-";
@@ -132,23 +131,22 @@ void setup()
   gainDict.put(28, (byte)0x08);
 
   // read input TBC 
-  // myPortRead = new Serial(this,"/dev/tty.usbmodem316B336930381", 9600);
-  // myport = new Serial(this,Serial.list()[1],115200);
-  // myport = new Serial(this,"COM7",115200);
+  myPortRead = new Serial(this, Serial.list()[0], 9600);
+  myport = new Serial(this,"COM7",115200);
   // List all the available serial ports:
   printArray(Serial.list());
-  
+  myPortRead.bufferUntil('\n');
 
   //GUI elements
   cp5 = new ControlP5(this);
-  cp5.addButton("button_play")
-    // .setValue(0)
+  cp5.addButton("play")
+    .setValue(0)
     .setPosition(width/2,height-150)
     .setSize(50,50)
     ;
 
-  cp5.addButton("button_pause")
-    // .setValue(10)
+  cp5.addButton("pause")
+    .setValue(10)
     .setPosition(width/2+70,height-150)
     .setSize(50,50)
     ;
@@ -362,7 +360,7 @@ void draw()
   {
     // * float intensity = fft.getBand(i%((int)(fft.specSize()*specHi)));
     float intensity = fft.getBand(i);
-    // println(intensity);
+    println(intensity);
     float intensity_music = fft_song.getBand(i);
     if(i%6==3||i%6==5||i%6==1){
     murs[i].display((scoreLow1/dim_color)+scoreLow2, (scoreMid1/dim_color)+scoreMid2, (scoreHi1/dim_color)+scoreHi2, (intensity/dim_color)+intensity_music, (scoreGlobal/dim_color)+scoreGlobal_music);}
@@ -638,7 +636,6 @@ void customizeWord(DropdownList ddl) {
 
 void serialEvent(Serial port) {
   String input = port.readString(); 
-  System.out.println(input);
   float window;
   float kwsres;
   if (input != null) {
@@ -702,41 +699,29 @@ void serialEvent(Serial port) {
 // myPortRead.write(65);
 }
 
-
 //GUI event & cmd
 //start 
-public void button_play(int theValue) {
-  System.out.println("button_play");
-  try{
-  myPortRead = new Serial(this,"/dev/tty.usbmodem316B336930381", 9600);
-  myPortRead.bufferUntil('\n');
-  }catch (Exception e) {
-    System.out.println("Serial already opened");
-  }
-  // //Start transmission, Send this cmd each time establish connection.
-  myPortRead.write((byte)0x0A);
+public void play(int theValue) {
+  println("play"+theValue);
+  //Start transmission, Send this cmd each time establish connection.
+  myport.write((byte)0x0A);
 }
 //stop
-public void button_pause(int theValue) {
-  println("button_pause");
+public void pause(int theValue) {
+  println("pause"+theValue);
   //Stop transmission
-   myPortRead.write((byte)0x0C);
+   myport.write((byte)0x0C);
 }
 void controlEvent(ControlEvent theEvent) {
   if (theEvent.isGroup()) {
     // check if the Event was triggered from a ControlGroup
-    // println("event from group : "+theEvent.getGroup().getValue()+" from "+theEvent.getGroup());
+    println("event from group : "+theEvent.getGroup().getValue()+" from "+theEvent.getGroup());
   } 
   else if (theEvent.isController()) {
-    if(theEvent.getController()==dropList1){
-      float value = theEvent.getController().getValue();
+    int value = theEvent.getController().getValue();
     println("event from controller : "+value+" from "+theEvent.getController());
     // myport.write(new byte[]{(byte)0x0B,(byte)0x05});
-    myPortRead.write(new byte[]{(byte)0x0B,(byte)(gainDict.get(value))});
-    }
-    if(theEvent.getController()==dropList2){
-
-    }
+    myport.write(new byte[]{(byte)0x0B,(byte)gainDict.get(value)});
   }
 }
 
@@ -760,7 +745,7 @@ void keyPressed()
   // Set feature to compare. (Select formt the list)
    if ( key == 'f' || key == 'F' ){
    feature = new Featrue(feature_nick);  //Prepare data to send.
-   feature.send(myPortRead); //send cmd 0x0D and feature data.
+   feature.send(myport); //send cmd 0x0D and feature data.
    }
 }
 

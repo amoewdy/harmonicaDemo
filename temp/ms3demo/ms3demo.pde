@@ -24,7 +24,8 @@ void setup()
 {
   size(500, 500);
    
-   myport = new Serial(this,"COM7",115200);
+   printArray(Serial.list());
+   myport = new Serial(this,"/dev/tty.usbmodem316B336930381",115200);
    
    //Stop transmission
    myport.write((byte)0x0C);
