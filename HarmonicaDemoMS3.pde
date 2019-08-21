@@ -15,21 +15,7 @@ FFT fft;
 FFT fft_song;
 Serial myPortRead;
 // Serial myport;
-Featrue feature;
 //Feature raw data.
-static float[] feature_nick = {1.0, 0.09482261, 0.71196096, 0.33469795, 0.00954271,
-                               0.42610248, 0.64153486, 0.94590519, 0.54915531, 0.85789977,
-                               0.40761014, 0.8666355, 0.0343089, 0.16187272, 0.84312321,
-                               0.22265605, 0.79967658, 0.19404002, 0.46965828, 0.21927928,
-                               0.67442555, 0.92260194, 0.8119627, 0.72632723, 0.19444464,
-                               0.6557695, 0.94408782, 0.73384134, 0.12572378, 0.52393848,
-                               0.00530087, 0.7705692, 0.71546082, 0.79894306, 0.1434266,
-                               0.02392478, 0.02827022, 0.89833059, 0.70119033, 0.2427583,
-                               0.80574012, 0.64495794, 0.14371673, 0.10288936, 0.1608715,
-                               0.48728477, 0.95233288, 0.3109348, 0.0508005, 0.55836322,
-                               0.28769407, 0.30631243, 0.21994837, 0.52510142, 0.20503161,
-                               0.92725837, 0.88805662, 0.91923468, 0.92248686, 0.93615086,
-                               0.91026605, 0.76172873, 0.09552055, 0.05058804};
 
 
 //GUI font
@@ -46,10 +32,6 @@ int kws_count = 0;
 // Serial readings
 ArrayList<String> scenarios = new ArrayList();
 ArrayList<Float> readings = new ArrayList();
-ArrayList<Float> window_score = new ArrayList();
-ArrayList<Float> keyword_score = new ArrayList();
-//Gain dictionary
-HashMap gainDict = new HashMap(); 
 //env
 float specLow1 = 0.03; // 3%
 float specMid1 = 0.125;  // 12.5%
@@ -102,7 +84,7 @@ float dim_color = 2;
 void setup()
 {
   fullScreen(P3D);
-  //size(1000,1000,P3D);
+  // size(1000,1000,P3D);
   kws = false;
   scenario = "-";
   event = "-";
@@ -131,16 +113,6 @@ void setup()
   scenarios.add("Flight");
   scenarios.add("Commute");
 
-  // Gain cmd dictionary
-  gainDict.put(20, (byte)0x00);
-  gainDict.put(21, (byte)0x01);
-  gainDict.put(22, (byte)0x02);
-  gainDict.put(23, (byte)0x03);
-  gainDict.put(24, (byte)0x04);
-  gainDict.put(25, (byte)0x05);
-  gainDict.put(26, (byte)0x06);
-  gainDict.put(27, (byte)0x07);
-  gainDict.put(28, (byte)0x08);
 
   // read input TBC 
   // myPortRead = new Serial(this,"/dev/tty.usbmodem316B336930381", 9600);
@@ -167,14 +139,33 @@ void setup()
     ;
 
   dropList1 = cp5.addDropdownList("gain")
-    .setPosition(width/2+150, height-150)
-    .setSize(200,200);         
-  customizeGain(dropList1); 
+                  .setPosition(width/2+150, height-150)
+                  .setSize(200,200)         
+                  .setBackgroundColor(color(0))
+                  .setItemHeight(30)
+                  .setBarHeight(15)
+                  .setColorBackground(color(60))
+                  .setColorActive(color(255, 128))
+                  ;
+  for (int i=0;i<9;i++) {
+    dropList1.addItem(Integer.toString(i)+"bits", (byte)i);
+  }
 
   dropList2 = cp5.addDropdownList("keyWord")
-          .setPosition(width/2+400, height-150)
-          .setSize(200,200);
-  customizeWord(dropList2);
+                  .setPosition(width/2+400, height-150)
+                  .setSize(200,200)
+                  .setBackgroundColor(color(0))
+                  .setItemHeight(30)
+                  .setBarHeight(15)
+                  .setColorBackground(color(60))
+                  .setColorActive(color(255, 128))
+                  .addItem("Thomas", (byte)0x01)
+                  .addItem("Jerry",(byte)0x02)
+                  .addItem("Yes",(byte)0x03)
+                  .addItem("Happy",(byte)0x04)
+                  .addItem("Ni Hao",(byte)0x05)
+                  ; 
+  
 
   //add more objects as music input
   nbCubes = (int)(fft.specSize()*specHi1);
@@ -616,52 +607,6 @@ class Mur {
   }
 }
 
-public class Featrue
-{
-  float[] data;
-  Featrue(float[] data)
-  {
-    this.data = data;
-  }
-  byte[] get_bytes()
-  {
-    ByteBuffer byteBuffer = ByteBuffer.allocate(257);
-    byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-    byteBuffer.put((byte)0x0D);
-    for (int i = 0; i != 64; i++)
-    {
-      byteBuffer.putFloat(1 + i * 4, this.data[i]);
-    }
-    return byteBuffer.array();
-  }
-  void send(Serial p){
-    p.write(this.get_bytes());
-  }
-}
-
-void customizeGain(DropdownList ddl) {
-  ddl.setBackgroundColor(color(0));
-  ddl.setItemHeight(30);
-  ddl.setBarHeight(15);
-   for (int i=0;i<9;i++) {
-    ddl.addItem("0x0"+i, i+20);
-    }
-  //ddl.scroll(0);
-  ddl.setColorBackground(color(60));
-  ddl.setColorActive(color(255, 128));
-}
-
-void customizeWord(DropdownList ddl) {
-  ddl.setBackgroundColor(color(0));
-  ddl.setItemHeight(30);
-  ddl.setBarHeight(15);
-  ddl.addItem("Cici", 50);
-  ddl.addItem("Jerry",51);
-  ddl.addItem("Thomas", 52); 
-  //ddl.scroll(0);
-  ddl.setColorBackground(color(60));
-  ddl.setColorActive(color(255, 128));
-}
 
 void serialEvent(Serial port) {
   String input = port.readString(); 
@@ -744,7 +689,8 @@ void serialEvent(Serial port) {
 public void button_play(int theValue) {
   System.out.println("button_play");
   try{
-  myPortRead = new Serial(this,"/dev/tty.usbmodem316B336930381", 9600);
+  // myPortRead = new Serial(this,"/dev/tty.usbmodem316B336930381", 9600);
+  myPortRead = new Serial(this,"COM7",115200);
   myPortRead.bufferUntil('\n');
   }catch (Exception e) {
     System.out.println("Serial already opened");
@@ -756,22 +702,17 @@ public void button_play(int theValue) {
 public void button_pause(int theValue) {
   println("button_pause");
   //Stop transmission
-   myPortRead.write((byte)0x0C);
+  myPortRead.write((byte)0x0C);
 }
 void controlEvent(ControlEvent theEvent) {
-  if (theEvent.isGroup()) {
-    // check if the Event was triggered from a ControlGroup
-    // println("event from group : "+theEvent.getGroup().getValue()+" from "+theEvent.getGroup());
-  } 
-  else if (theEvent.isController()) {
+  if (theEvent.isController()) {
     if(theEvent.getController()==dropList1){
-      float value = theEvent.getController().getValue();
-    println("event from controller : "+value+" from "+theEvent.getController());
-    // myport.write(new byte[]{(byte)0x0B,(byte)0x05});
-    myPortRead.write(new byte[]{(byte)0x0B,(byte)(gainDict.get(value))});
+      // System.out.println((byte)dropList1.getValue());
+      myPortRead.write(new byte[]{(byte)0x0B,(byte)dropList1.getValue())});
     }
     if(theEvent.getController()==dropList2){
-
+      // System.out.println((byte)dropList2.getValue());
+      myPortRead.write(new byte[]{(byte)0x0D,(byte)dropList1.getValue())});
     }
   }
 }
@@ -793,11 +734,6 @@ void keyPressed()
       System.out.println("enableMonitoring"); 
     }
   }
-  // Set feature to compare. (Select formt the list)
-   if ( key == 'f' || key == 'F' ){
-   feature = new Featrue(feature_nick);  //Prepare data to send.
-   feature.send(myPortRead); //send cmd 0x0D and feature data.
-   }
 }
 
   
