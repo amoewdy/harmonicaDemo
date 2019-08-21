@@ -222,16 +222,16 @@ void setup()
   titleBlack= createFont("HelveticaNeue-Bold", 26);
   background(0);
   //start the music, repeat
-  song.play();
+  song.loop();
 }
 
 void draw()
 { 
-  if(song.position() == song.length() )
-  {
-    song.rewind();
-    song.play();
-  }
+  // if(song.position() >= (song.length()-2000) )
+  // {
+  //   song.rewind();
+  //   song.play();
+  // }
 
   fft_song.forward(song.mix);
   fft.forward(envSound.mix);
@@ -699,7 +699,7 @@ void serialEvent(Serial port) {
 
       event = "Name Called";
       music = "Volume down";
-      song.setVolume(0.0);
+      song.setGain(-20);
     }
     if(kws==true){
       kws_count++;
@@ -716,7 +716,7 @@ void serialEvent(Serial port) {
         kws_music = false;
         kws_count_music = 0;
         music = "Play";
-        song.setVolume(1);
+        song.setGain(0);
       }
 
     }
