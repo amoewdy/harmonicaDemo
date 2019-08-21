@@ -303,17 +303,19 @@ void draw()
   float scoreGlobal = 0.66*scoreLow1 + 0.8*scoreMid1 + 1*scoreHi1;
 
   background(scoreLow1/100, scoreMid1/100, scoreHi1/100);
+  float scalar_tetra = (kws_count_music<20)? (20.0f-(float)kws_count_music)/20.0f : 0.0f;
+  scalar_tetra = (kws_count_music>180)? ((float)kws_count_music-180.0f)/20.0f : scalar_tetra;
     //generate tetrahedrons
     for(int i=0;i<nbTetrahedrons;i++){
       float bandValue_music = fft_song.getBand(i);
-      System.out.println(kws_music);
+      // System.out.println(kws_music);
       if (kws_music == true){
         if (i %10 == 0){
           tetrahedrons[i].display(scoreLow2, scoreMid2, scoreHi2, bandValue_music, scoreGlobal_music);
+        }else{
+          tetrahedrons[i].display(scoreLow2, scoreMid2, scoreHi2, bandValue_music, scoreGlobal_music,true,scalar_tetra);
         }
-        // else{
-        //   tetrahedrons[i].display(0, 0, 0, 0, 0);
-        // }
+        
       }
       else {
         tetrahedrons[i].display(scoreLow2, scoreMid2, scoreHi2, bandValue_music, scoreGlobal_music);
@@ -321,22 +323,31 @@ void draw()
 
     }
     //generate cubes on both sides
+    float scalar_cube = (kws_count_music<20)? ((float)kws_count_music)/20.0f : 1.0f;
+    scalar_cube = (kws_count_music>180)? (200.0f-(float)kws_count_music)/20.0f : scalar_cube;
     for(int i = 0; i < nbCubes; i++)
     {
-    float bandValue = fft.getBand(i); 
-    // The color is represented as: red for bass, green for medium sounds and blue for high.
-    float next_x = random(0,width/2-70);
-    float next_y = random(0, height-GUIHeight);
-    cubes_env[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,false,next_x,next_y);
-    if (kws_music == false){
-      if(i%3==0)
-            {
-              cubes_anc[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,true,width-next_x,next_y);
-            }
-          
-    } else {
-       cubes_anc[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,true,width-next_x,next_y);
-    }
+      float bandValue = fft.getBand(i); 
+      // The color is represented as: red for bass, green for medium sounds and blue for high.
+      float next_x = random(0,width/2-70);
+      float next_y = random(0, height-GUIHeight);
+      cubes_env[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,false,next_x,next_y);
+      if (kws_music == false){
+        if(i%3==0){
+          cubes_anc[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,true,width-next_x,next_y);
+        }
+        else{
+          cubes_anc[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,true,width-next_x,next_y,false,1.0f);
+        }
+            
+      } else {
+        if(i%3==0){
+          cubes_anc[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,true,width-next_x,next_y);
+        }
+        else{
+          cubes_anc[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,true,width-next_x,next_y,true,scalar_cube);
+        }
+      }
     }
     
 
@@ -447,18 +458,17 @@ class Tetrahedron{
     rotZ = random(0, 1);
   }
   //visualize music feature
-  void display(float scoreLow, float scoreMid, float scoreHi, float intensity, float scoreGlobal) {
-    boolean nameCalled = kws_music;
-    if (nameCalled == true){
-      return;
-    }
+  void display(float scoreLow, float scoreMid, float scoreHi, float intensity, float scoreGlobal){
+    this.display(scoreLow, scoreMid, scoreHi, intensity, scoreGlobal, true,1.0);
+  }
+  void display(float scoreLow, float scoreMid, float scoreHi, float intensity, float scoreGlobal,boolean isdrawed, float scalar) {
 
-    color displayColor = nameCalled? 
+    color displayColor = (!isdrawed)? 
       color(scoreLow*0.33, scoreMid*0.4, scoreHi*0.4, intensity*3)
       : color(scoreLow*0.67, scoreMid*0.8, scoreHi*0.8, intensity*5+30);
 
     fill(displayColor, 255);
-    }
+    
 
     // color strokeColor = color(255, 150-(20*intensity));
     // color strokeColor = color(255, 150-(20*intensity));
@@ -478,27 +488,30 @@ class Tetrahedron{
     rotateZ(sumRotZ);
     
     // box(100+(intensity/2));
-    float length = 100+intensity/2;
-    beginShape(TRIANGLES);
-    vertex(length, 0, -length/1.414);
-    vertex(-length,0,-length/1.414);
-    vertex(0, length, length/1.414);
-    endShape();
-    beginShape(TRIANGLES);
-    vertex(length, 0, -length/1.414);
-    vertex(-length,0,-length/1.414);
-    vertex(0, -length, length/1.414); 
-    endShape();
-    beginShape(TRIANGLES);
-    vertex(length, 0, -length/1.414);
-    vertex(0, length, length/1.414);
-    vertex(0, -length, length/1.414); 
-    endShape();
-    beginShape(TRIANGLES);
-    vertex(-length,0,-length/1.414);
-    vertex(0, length, length/1.414);
-    vertex(0, -length, length/1.414); 
-    endShape();
+    if(isdrawed){
+      float length = (100+intensity/2)*scalar;
+      beginShape(TRIANGLES);
+      vertex(length, 0, -length/1.414);
+      vertex(-length,0,-length/1.414);
+      vertex(0, length, length/1.414);
+      endShape();
+      beginShape(TRIANGLES);
+      vertex(length, 0, -length/1.414);
+      vertex(-length,0,-length/1.414);
+      vertex(0, -length, length/1.414); 
+      endShape();
+      beginShape(TRIANGLES);
+      vertex(length, 0, -length/1.414);
+      vertex(0, length, length/1.414);
+      vertex(0, -length, length/1.414); 
+      endShape();
+      beginShape(TRIANGLES);
+      vertex(-length,0,-length/1.414);
+      vertex(0, length, length/1.414);
+      vertex(0, -length, length/1.414); 
+      endShape();
+    }
+    
     
     //Application of the matrix
     popMatrix();
@@ -531,8 +544,11 @@ class Cube {
     rotY = rot_y;
     rotZ = rot_z;  
   }
-  
-  void display(float scoreLow, float scoreMid, float scoreHi, float intensity, float scoreGlobal, boolean dim, float next_x,float next_y) {
+
+  void display(float scoreLow, float scoreMid, float scoreHi, float intensity, float scoreGlobal, boolean dim, float next_x,float next_y){
+    this.display(scoreLow, scoreMid, scoreHi, intensity, scoreGlobal, dim, next_x,next_y,true,1.0);
+  }  
+  void display(float scoreLow, float scoreMid, float scoreHi, float intensity, float scoreGlobal, boolean dim, float next_x,float next_y,boolean isdrawed,float scalar) {
     color displayColor = color(scoreLow*0.67, scoreMid*0.67, scoreHi*0.67, intensity*5);
     //the 'after' cubes is always dim but the speed remain the same to creat the sense of realtime processing
     if(dim==false){
@@ -568,7 +584,9 @@ class Cube {
     
     //variable size according to the intensity for the cube
     //might reduce the box size to emphasize music proportion
-    box(100+(intensity/2));
+    if(isdrawed){
+      box((100+(intensity/2))*scalar);
+    }
     
     //Application of the matrix
     popMatrix();
@@ -734,8 +752,8 @@ void serialEvent(Serial port) {
 public void PLAY(int theValue) {
   // System.out.println("button_play");
   try{
-  myPortRead = new Serial(this,"/dev/tty.usbmodem316B336930381", 9600);
-  // myPortRead = new Serial(this,"COM7",115200);
+  // myPortRead = new Serial(this,"/dev/tty.usbmodem316B336930381", 9600);
+  myPortRead = new Serial(this,"COM7",115200);
   myPortRead.bufferUntil('\n');
   }catch (Exception e) {
     System.out.println("Serial already opened");
