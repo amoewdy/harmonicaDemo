@@ -126,7 +126,7 @@ void setup()
   //GUI elements
   kws_line_width = (width/2-400)/200;
   cp5 = new ControlP5(this);
-  cp5.addButton("button_play")
+  cp5.addButton("PLAY")
     // .setValue(0)
     .setPosition(width/2,height-150)
     .setSize(50,50)
@@ -687,8 +687,8 @@ void serialEvent(Serial port) {
 
 //GUI event & cmd
 //start 
-public void button_play(int theValue) {
-  System.out.println("button_play");
+public void PLAY(int theValue) {
+  // System.out.println("button_play");
   try{
   myPortRead = new Serial(this,"/dev/tty.usbmodem316B336930381", 9600);
   // myPortRead = new Serial(this,"COM7",115200);
@@ -714,22 +714,22 @@ void controlEvent(ControlEvent theEvent) {
 }
 
 
-void keyPressed()
-{
-  // Monitor computer audio output
-  if ( key == 'm' || key == 'M' )
-  {
-    if ( envSound.isMonitoring() )
-    {
-      envSound.disableMonitoring();
-      System.out.println("disableMonitoring");  
-    }
-    else
-    {
-      envSound.enableMonitoring();
-      System.out.println("enableMonitoring"); 
-    }
-  }
-}
+// void keyPressed()
+// {
+//   // Monitor computer audio output
+//   if ( key == 'm' || key == 'M' )
+//   {
+//     if ( envSound.isMonitoring() )
+//     {
+//       envSound.disableMonitoring();
+//       System.out.println("disableMonitoring");  
+//     }
+//     else
+//     {
+//       envSound.enableMonitoring();
+//       System.out.println("enableMonitoring"); 
+//     }
+//   }
+// }
 
   
