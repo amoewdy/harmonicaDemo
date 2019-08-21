@@ -3,7 +3,6 @@ import ddf.minim.analysis.*;
 import controlP5.*;
 import processing.serial.*;
 import java.nio.*;
-import processing.serial.*;
 
 
 ControlP5 cp5;
@@ -227,6 +226,12 @@ void setup()
 
 void draw()
 { 
+  if(song.position() == song.length() )
+  {
+    song.rewind();
+    song.play();
+  }
+
   fft_song.forward(song.mix);
   fft.forward(envSound.mix);
   
@@ -275,29 +280,29 @@ void draw()
   }
   
   //for environment sound
-  if (oldScoreLow1 > scoreLow1) {
-    scoreLow1 = oldScoreLow1 - scoreDecreaseRate;
-  }
+  // if (oldScoreLow1 > scoreLow1) {
+  //   scoreLow1 = oldScoreLow1 - scoreDecreaseRate;
+  // }
   
-  if (oldScoreMid1 > scoreMid1) {
-    scoreMid1 = oldScoreMid1 - scoreDecreaseRate;
-  }
+  // if (oldScoreMid1 > scoreMid1) {
+  //   scoreMid1 = oldScoreMid1 - scoreDecreaseRate;
+  // }
   
-  if (oldScoreHi1 > scoreHi1) {
-    scoreHi1 = oldScoreHi1 - scoreDecreaseRate;
-  }
-  //for music 
-  if (oldScoreLow2 > scoreLow2) {
-    scoreLow2 = oldScoreLow2 - scoreDecreaseRate;
-  }
+  // if (oldScoreHi1 > scoreHi1) {
+  //   scoreHi1 = oldScoreHi1 - scoreDecreaseRate;
+  // }
+  // //for music 
+  // if (oldScoreLow2 > scoreLow2) {
+  //   scoreLow2 = oldScoreLow2 - scoreDecreaseRate;
+  // }
   
-  if (oldScoreMid2 > scoreMid2) {
-    scoreMid2 = oldScoreMid2 - scoreDecreaseRate;
-  }
+  // if (oldScoreMid2 > scoreMid2) {
+  //   scoreMid2 = oldScoreMid2 - scoreDecreaseRate;
+  // }
   
-  if (oldScoreHi2 > scoreHi2) {
-    scoreHi2 = oldScoreHi2 - scoreDecreaseRate;
-  }
+  // if (oldScoreHi2 > scoreHi2) {
+  //   scoreHi2 = oldScoreHi2 - scoreDecreaseRate;
+  // }
   
   float scoreGlobal_music = 0.66*scoreLow2 + 0.8*scoreMid2 + 1*scoreHi2;
   float scoreGlobal = 0.66*scoreLow1 + 0.8*scoreMid1 + 1*scoreHi1;
@@ -333,7 +338,7 @@ void draw()
       float next_y = random(0, height-GUIHeight);
       cubes_env[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,false,next_x,next_y);
       if (kws_music == false){
-        if(i%3==0){
+        if(i%5==0){
           cubes_anc[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,true,width-next_x,next_y);
         }
         else{
@@ -341,11 +346,11 @@ void draw()
         }
             
       } else {
-        if(i%3==0){
-          cubes_anc[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,true,width-next_x,next_y);
+        if(i%5==0){
+          cubes_anc[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,false,width-next_x,next_y);
         }
         else{
-          cubes_anc[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,true,width-next_x,next_y,true,scalar_cube);
+          cubes_anc[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,false,width-next_x,next_y,true,scalar_cube);
         }
       }
     }
@@ -358,7 +363,8 @@ void draw()
   float dist = -30;
   //Multiply the height by this constant
   float heightMult_left = 2;
-  float heightMult_right = heightMult_left/dim_color;
+  float heightMult_right;
+  heightMult_right = (!kws_music)? heightMult_left/dim_color : heightMult_left;
 
   strokeWeight(1);
   stroke(255);
@@ -394,17 +400,23 @@ void draw()
     previousBandValue = bandValue;
   }
   
-    for(int i = 0; i < nbMurs; i++)
+  for(int i = 0; i < nbMurs; i++)
   {
     // * float intensity = fft.getBand(i%((int)(fft.specSize()*specHi)));
     float intensity = fft.getBand(i);
     // println(intensity);
     float intensity_music = fft_song.getBand(i);
     if(i%6==3||i%6==5||i%6==1){
-    murs[i].display((scoreLow1/dim_color)+scoreLow2, (scoreMid1/dim_color)+scoreMid2, (scoreHi1/dim_color)+scoreHi2, (intensity/dim_color)+intensity_music, (scoreGlobal/dim_color)+scoreGlobal_music);}
-    else{
-    murs[i].display(scoreLow1, scoreMid1, scoreHi1, intensity, scoreGlobal);      
+      if(!kws_music){
+        murs[i].display(scoreLow1/dim_color, scoreMid1/dim_color, scoreHi1/dim_color, intensity/dim_color, scoreGlobal/dim_color);
+      }else{
+        murs[i].display(scoreLow1, scoreMid1, scoreHi1, intensity, scoreGlobal); 
+      }
     }
+    else{
+      murs[i].display(scoreLow1, scoreMid1, scoreHi1, intensity, scoreGlobal);      
+    }
+    
   }
   // 3d code above
   hint(DISABLE_DEPTH_TEST);
@@ -464,8 +476,8 @@ class Tetrahedron{
   void display(float scoreLow, float scoreMid, float scoreHi, float intensity, float scoreGlobal,boolean isdrawed, float scalar) {
 
     color displayColor = (!isdrawed)? 
-      color(scoreLow*0.33, scoreMid*0.4, scoreHi*0.4, intensity*3)
-      : color(scoreLow*0.67, scoreMid*0.8, scoreHi*0.8, intensity*5+30);
+      color(scoreMid*0.33, scoreHi*0.4, scoreLow*0.4, intensity*3)
+      : color(scoreMid*0.67, scoreHi*0.8, scoreLow*0.8, intensity*5+30);
 
     fill(displayColor, 255);
     
@@ -474,7 +486,8 @@ class Tetrahedron{
     // color strokeColor = color(255, 150-(20*intensity));
     // color strokeColor = color(255, 0);
     // stroke(strokeColor);
-    strokeWeight(1 + (scoreGlobal/300));
+    strokeWeight(1);
+    // strokeWeight(1 + (scoreGlobal/300));
     
     //Create a transformation matrix to perform rotations, enlargements
     pushMatrix();
@@ -549,7 +562,7 @@ class Cube {
     this.display(scoreLow, scoreMid, scoreHi, intensity, scoreGlobal, dim, next_x,next_y,true,1.0);
   }  
   void display(float scoreLow, float scoreMid, float scoreHi, float intensity, float scoreGlobal, boolean dim, float next_x,float next_y,boolean isdrawed,float scalar) {
-    color displayColor = color(scoreLow*0.67, scoreMid*0.67, scoreHi*0.67, intensity*5);
+    color displayColor = color(scoreLow, scoreMid*0.5, scoreHi, intensity*5);
     //the 'after' cubes is always dim but the speed remain the same to creat the sense of realtime processing
     if(dim==false){
     fill(displayColor, 255);
@@ -684,6 +697,7 @@ void serialEvent(Serial port) {
       kws_music = true;
 
       event = "Name Called";
+      music = "Volume down";
     }
     if(kws==true){
       kws_count++;
@@ -699,6 +713,7 @@ void serialEvent(Serial port) {
       if (kws_count_music > 200){
         kws_music = false;
         kws_count_music = 0;
+        music = "Play";
       }
 
     }
@@ -723,19 +738,19 @@ void serialEvent(Serial port) {
     float maxValue = Math.max(Math.max(Math.max(sum_home,sum_commute),sum_terminal),sum_flight);
     if(sum_home == maxValue){
       scenario = scenarios.get(1);
-      dim_color = 1;
+      dim_color = 5;
     }
     else if(sum_commute == maxValue){
       scenario = scenarios.get(2);
-      dim_color = 2;
+      dim_color = 10;
     }
     else if(sum_terminal == maxValue){
       scenario = scenarios.get(3);
-      dim_color = 6;
+      dim_color = 30;
     }
     else{
       scenario = scenarios.get(4);
-      dim_color = 3;
+      dim_color = 15;
     }
     }catch (Exception e) {
       System.out.println("Serial error");
