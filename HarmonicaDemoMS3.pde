@@ -26,10 +26,13 @@ int anc;
 boolean nameCalled;
 //GUI text 
 boolean kws;
+boolean kws_music;
+
 String scenario;
 String event;
 String music;
 int kws_count = 0;
+int kws_count_music = 0;
 // Serial readings
 ArrayList<String> scenarios = new ArrayList();
 ArrayList<Float> readings = new ArrayList();
@@ -86,9 +89,9 @@ float dim_color = 2;
 
 void setup()
 {
-  fullScreen(P3D);
-  // size(1000,1000,P3D);
-  nameCalled = false;
+  // fullScreen(P3D);
+  size(1000,1000,P3D);
+
   kws = false;
   scenario = "-";
   event = "-";
@@ -310,7 +313,19 @@ void draw()
     //generate tetrahedrons
     for(int i=0;i<nbTetrahedrons;i++){
       float bandValue_music = fft_song.getBand(i);
-      tetrahedrons[i].display(scoreLow2, scoreMid2, scoreHi2, bandValue_music, scoreGlobal_music,nameCalled);
+      System.out.println(kws_music);
+      if (kws_music == true){
+        if (i %10 == 0){
+          tetrahedrons[i].display(scoreLow2, scoreMid2, scoreHi2, bandValue_music, scoreGlobal_music);
+        }
+        // else{
+        //   tetrahedrons[i].display(0, 0, 0, 0, 0);
+        // }
+      }
+      else {
+        tetrahedrons[i].display(scoreLow2, scoreMid2, scoreHi2, bandValue_music, scoreGlobal_music);
+      }
+
     }
     //generate cubes on both sides
     for(int i = 0; i < nbCubes; i++)
@@ -320,11 +335,17 @@ void draw()
     float next_x = random(0,width/2-70);
     float next_y = random(0, height-GUIHeight);
     cubes_env[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,false,next_x,next_y);
-    if(i%5==0)
-      {
-        cubes_anc[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,true,width-next_x,next_y);
-      }
+    if (kws_music == false){
+      if(i%3==0)
+            {
+              cubes_anc[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,true,width-next_x,next_y);
+            }
+          
+    } else {
+       cubes_anc[i].display(scoreLow1, scoreMid1, scoreHi1, bandValue, scoreGlobal,true,width-next_x,next_y);
     }
+    }
+    
 
   float previousBandValue = fft.getBand(0);
   // println(previousBandValue);
@@ -433,13 +454,16 @@ class Tetrahedron{
     rotZ = random(0, 1);
   }
   //visualize music feature
-  void display(float scoreLow, float scoreMid, float scoreHi, float intensity, float scoreGlobal,boolean nameCalled) {
-    if(nameCalled){
-    color displayColor = color(scoreLow*0.3, scoreMid*0.3, scoreHi*0.3, intensity*3);
-    fill(displayColor, 255);
+  void display(float scoreLow, float scoreMid, float scoreHi, float intensity, float scoreGlobal) {
+    boolean nameCalled = kws_music;
+    if (nameCalled == true){
+      return;
     }
-    else{
-    color displayColor = color(scoreLow*0.67, scoreMid*0.8, scoreHi*0.8, intensity*5+30);
+
+    color displayColor = nameCalled? 
+      color(scoreLow*0.33, scoreMid*0.4, scoreHi*0.4, intensity*3)
+      : color(scoreLow*0.67, scoreMid*0.8, scoreHi*0.8, intensity*5+30);
+
     fill(displayColor, 255);
     }
 
@@ -644,12 +668,16 @@ void serialEvent(Serial port) {
     // Increase display time of keyword spotting result
     if(window>0.5 && kwsres>0.5){ 
       kws=true;
-      nameCalled=true;
+
+      kws_music = true;
+
       event = "Name Called";
     }
     if(kws==true){
       kws_count++;
-      if(kws_count>100){
+
+      if(kws_count>20){
+
         kws=false;
         nameCalled=false;
         kws_count=0;
@@ -657,6 +685,16 @@ void serialEvent(Serial port) {
       }
 
     }
+    if(kws_music){
+      kws_count_music++;
+      if (kws_count_music > 200){
+        kws_music = false;
+        kws_count_music = 0;
+      }
+
+    }
+    
+  
 
     float sum_home = 0;
     float sum_commute = 0;
