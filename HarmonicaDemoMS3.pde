@@ -106,9 +106,10 @@ void setup()
   event = "-";
   music = "Play";
   minim = new Minim(this);
-  envSound = minim.getLineIn();
+  envSound = minim.getLineIn(minim.MONO,8192,44100);
   song = minim.loadFile("RainRabbit.mp3"); 
   fft = new FFT(envSound.bufferSize(), envSound.sampleRate());
+  //sampleRate = 44100;
   fft_song = new FFT(song.bufferSize(), song.sampleRate());
 
   //list length
@@ -117,9 +118,10 @@ void setup()
   }
   //scenario list
   scenarios.add("Home");
-  scenarios.add("Commute");
   scenarios.add("Terminal");
   scenarios.add("Flight");
+  scenarios.add("Commute");
+
   // Gain cmd dictionary
   gainDict.put(20, (byte)0x00);
   gainDict.put(21, (byte)0x01);
@@ -169,6 +171,7 @@ void setup()
   cubes_anc = new Cube[nbCubes];
   murs = new Mur[nbMurs];
   nbTetrahedrons = (int)(fft.specSize()*specHi2);
+  println(fft.specSize());
   tetrahedrons = new Tetrahedron[nbTetrahedrons];
   
   //generate pairs of objects.
@@ -322,7 +325,7 @@ void draw()
   float dist = -30;
   //Multiply the height by this constant
   float heightMult_left = 2;
-  float heightMult_right = 0.4;
+  float heightMult_right = heightMult_left/dim_color;
 
   strokeWeight(1);
   stroke(255);
@@ -412,12 +415,13 @@ class Tetrahedron{
   }
   //visualize music feature
   void display(float scoreLow, float scoreMid, float scoreHi, float intensity, float scoreGlobal) {
-    color displayColor = color(scoreLow*0.67, scoreMid*0.8, scoreHi*0.8, intensity*5);
+    color displayColor = color(scoreLow*0.67, scoreMid*0.8, scoreHi*0.8, intensity*5+30);
     fill(displayColor, 255);
 
-    color strokeColor = color(255, 150-(20*intensity));
+    // color strokeColor = color(255, 150-(20*intensity));
+    // color strokeColor = color(255, 150-(20*intensity));
     // color strokeColor = color(255, 0);
-    stroke(strokeColor);
+    // stroke(strokeColor);
     strokeWeight(1 + (scoreGlobal/300));
     
     //Create a transformation matrix to perform rotations, enlargements
@@ -687,15 +691,19 @@ void serialEvent(Serial port) {
     float maxValue = Math.max(Math.max(Math.max(sum_home,sum_commute),sum_terminal),sum_flight);
     if(sum_home == maxValue){
       scenario = scenarios.get(1);
+      dim_color = 1;
     }
     else if(sum_commute == maxValue){
       scenario = scenarios.get(2);
+      dim_color = 2;
     }
     else if(sum_terminal == maxValue){
       scenario = scenarios.get(3);
+      dim_color = 6;
     }
     else{
       scenario = scenarios.get(4);
+      dim_color = 3;
     }
   }
 // Send a capital "A" out the serial port
