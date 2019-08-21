@@ -710,11 +710,11 @@ void controlEvent(ControlEvent theEvent) {
   if (theEvent.isController()) {
     if(theEvent.getController()==dropList1){
       // System.out.println((byte)dropList1.getValue());
-      myPortRead.write(new byte[]{(byte)0x0B,(byte)dropList1.getValue())});
+      myPortRead.write(new byte[]{(byte)0x0B,(byte)dropList1.getValue()});
     }
     if(theEvent.getController()==dropList2){
       // System.out.println((byte)dropList2.getValue());
-      myPortRead.write(new byte[]{(byte)0x0D,(byte)dropList1.getValue())});
+      myPortRead.write(new byte[]{(byte)0x0D,(byte)dropList2.getValue()});
     }
   }
 }
