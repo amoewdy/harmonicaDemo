@@ -1,5 +1,6 @@
 import ddf.minim.*;
 import ddf.minim.analysis.*;
+import ddf.minim.signals.*;
 import controlP5.*;
 import processing.serial.*;
 import java.nio.*;
@@ -698,6 +699,7 @@ void serialEvent(Serial port) {
 
       event = "Name Called";
       music = "Volume down";
+      song.setVolume(0.0);
     }
     if(kws==true){
       kws_count++;
@@ -714,6 +716,7 @@ void serialEvent(Serial port) {
         kws_music = false;
         kws_count_music = 0;
         music = "Play";
+        song.setVolume(1);
       }
 
     }
