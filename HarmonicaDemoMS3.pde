@@ -23,6 +23,7 @@ PFont label,textBlack,titleBlack;
 
 //noise cancelling rate
 int anc;
+boolean nameCalled;
 //GUI text 
 boolean kws;
 String scenario;
@@ -87,6 +88,7 @@ void setup()
 {
   fullScreen(P3D);
   // size(1000,1000,P3D);
+  nameCalled = false;
   kws = false;
   scenario = "-";
   event = "-";
@@ -308,7 +310,7 @@ void draw()
     //generate tetrahedrons
     for(int i=0;i<nbTetrahedrons;i++){
       float bandValue_music = fft_song.getBand(i);
-      tetrahedrons[i].display(scoreLow2, scoreMid2, scoreHi2, bandValue_music, scoreGlobal_music);
+      tetrahedrons[i].display(scoreLow2, scoreMid2, scoreHi2, bandValue_music, scoreGlobal_music,nameCalled);
     }
     //generate cubes on both sides
     for(int i = 0; i < nbCubes; i++)
@@ -392,11 +394,12 @@ void draw()
   // rect(300,height-130,width/2-400,50);
   //draw realtime kws result
   for(int i=0;i<199;i++){
-    stroke(0,255,0,255);
+    stroke(0,255,150,255);
     line(300+i*kws_line_width,height-80-50*window_score.get(i),300+(i+1)*kws_line_width,height-80-50*window_score.get(i+1));
-    stroke(0,0,255,255);
+    stroke(0,150,255,255);
     line(300+i*kws_line_width,height-80-50*keyword_score.get(i),300+(i+1)*kws_line_width,height-80-50*keyword_score.get(i+1));
   }
+  stroke(255,255,255,255);
 
   //static UI element
   textSize(28);	
@@ -430,9 +433,15 @@ class Tetrahedron{
     rotZ = random(0, 1);
   }
   //visualize music feature
-  void display(float scoreLow, float scoreMid, float scoreHi, float intensity, float scoreGlobal) {
+  void display(float scoreLow, float scoreMid, float scoreHi, float intensity, float scoreGlobal,boolean nameCalled) {
+    if(nameCalled){
+    color displayColor = color(scoreLow*0.3, scoreMid*0.3, scoreHi*0.3, intensity*3);
+    fill(displayColor, 255);
+    }
+    else{
     color displayColor = color(scoreLow*0.67, scoreMid*0.8, scoreHi*0.8, intensity*5+30);
     fill(displayColor, 255);
+    }
 
     // color strokeColor = color(255, 150-(20*intensity));
     // color strokeColor = color(255, 150-(20*intensity));
@@ -491,7 +500,7 @@ class Tetrahedron{
   }
 }
 
-class Cube {
+class Cube{
 
   float x, y, z;
   float rotX, rotY, rotZ;
@@ -635,15 +644,18 @@ void serialEvent(Serial port) {
     // Increase display time of keyword spotting result
     if(window>0.5 && kwsres>0.5){ 
       kws=true;
+      nameCalled=true;
       event = "Name Called";
     }
     if(kws==true){
       kws_count++;
       if(kws_count>100){
         kws=false;
+        nameCalled=false;
         kws_count=0;
         event = "-";
       }
+
     }
 
     float sum_home = 0;
@@ -691,8 +703,8 @@ void serialEvent(Serial port) {
 public void button_play(int theValue) {
   System.out.println("button_play");
   try{
-  // myPortRead = new Serial(this,"/dev/tty.usbmodem316B336930381", 9600);
-  myPortRead = new Serial(this,"COM7",115200);
+  myPortRead = new Serial(this,"/dev/tty.usbmodem316B336930381", 9600);
+  // myPortRead = new Serial(this,"COM7",115200);
   myPortRead.bufferUntil('\n');
   }catch (Exception e) {
     System.out.println("Serial already opened");
