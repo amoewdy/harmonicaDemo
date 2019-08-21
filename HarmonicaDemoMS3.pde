@@ -32,6 +32,8 @@ int kws_count = 0;
 // Serial readings
 ArrayList<String> scenarios = new ArrayList();
 ArrayList<Float> readings = new ArrayList();
+ArrayList<Float> window_score = new ArrayList();
+ArrayList<Float> keyword_score = new ArrayList();
 //env
 float specLow1 = 0.03; // 3%
 float specMid1 = 0.125;  // 12.5%
@@ -618,10 +620,10 @@ void serialEvent(Serial port) {
     float[] vals = float(split(input, ","));
     window = vals[0];
     window_score.add(window);
-    window_score.subList(0,1).clear();
+    window_score.remove(0);
     kwsres = vals[1]; 
     keyword_score.add(kwsres);
-    keyword_score.subList(0,1).clear();
+    keyword_score.remove(0);
     print(keyword_score);
 
     for(int k=0;k<6;k++){
