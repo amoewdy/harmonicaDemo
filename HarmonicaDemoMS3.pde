@@ -133,19 +133,13 @@ void setup()
     .setImages(icons[0])
     ;
 
-  cp5.addButton("button_pause")
-    // .setValue(10)
-    .setPosition(width/2+70,height-150)
-    .setSize(50,50)
-    .setImages(icons[1])
-    ;
 
   dropList1 = cp5.addDropdownList("gain")
                   .setPosition(width/2+150, height-150)
-                  .setSize(200,200)         
+                  .setSize(200,150)         
                   .setBackgroundColor(color(0))
-                  .setItemHeight(30)
-                  .setBarHeight(15)
+                  .setItemHeight(20)
+                  .setBarHeight(20)
                   .setColorBackground(color(60))
                   .setColorActive(color(255, 128))
                   ;
@@ -155,10 +149,10 @@ void setup()
 
   dropList2 = cp5.addDropdownList("keyWord")
                   .setPosition(width/2+400, height-150)
-                  .setSize(200,200)
+                  .setSize(200,150)
                   .setBackgroundColor(color(0))
-                  .setItemHeight(30)
-                  .setBarHeight(15)
+                  .setItemHeight(20)
+                  .setBarHeight(20)
                   .setColorBackground(color(60))
                   .setColorActive(color(255, 128))
                   .addItem("Thomas", (byte)0x01)
@@ -616,7 +610,8 @@ void serialEvent(Serial port) {
   float window;
   float kwsres;
   if (input != null) {
-    println( "Receiving:" + input);
+    try{
+      // println( "Receiving:" + input);
     float[] vals = float(split(input, ","));
     window = vals[0];
     window_score.add(window);
@@ -624,7 +619,7 @@ void serialEvent(Serial port) {
     kwsres = vals[1]; 
     keyword_score.add(kwsres);
     keyword_score.remove(0);
-    print(keyword_score);
+    // print(keyword_score);
 
     for(int k=0;k<6;k++){
       readings.add(vals[k]);
@@ -633,13 +628,13 @@ void serialEvent(Serial port) {
     readings.subList(0, 6).clear();
     
     // Increase display time of keyword spotting result
-    if(window>0.5 && kwsres>0.5){ 
+    if(window>0.5 && kwsres>0.7){ 
       kws=true;
       event = "Name Called";
     }
     if(kws==true){
       kws_count++;
-      if(kws_count>100){
+      if(kws_count>20){
         kws=false;
         kws_count=0;
         event = "-";
@@ -680,6 +675,10 @@ void serialEvent(Serial port) {
       scenario = scenarios.get(4);
       dim_color = 3;
     }
+    }catch (Exception e) {
+      System.out.println("Serial error");
+    }
+    
   }
 // Send a capital "A" out the serial port
 // myPortRead.write(65);
@@ -691,8 +690,8 @@ void serialEvent(Serial port) {
 public void button_play(int theValue) {
   System.out.println("button_play");
   try{
-  // myPortRead = new Serial(this,"/dev/tty.usbmodem316B336930381", 9600);
-  myPortRead = new Serial(this,"COM7",115200);
+  myPortRead = new Serial(this,"/dev/tty.usbmodem316B336930381", 9600);
+  // myPortRead = new Serial(this,"COM7",115200);
   myPortRead.bufferUntil('\n');
   }catch (Exception e) {
     System.out.println("Serial already opened");
@@ -700,21 +699,16 @@ public void button_play(int theValue) {
   // //Start transmission, Send this cmd each time establish connection.
   myPortRead.write((byte)0x0A);
 }
-//stop
-public void button_pause(int theValue) {
-  println("button_pause");
-  //Stop transmission
-  myPortRead.write((byte)0x0C);
-}
+
 void controlEvent(ControlEvent theEvent) {
   if (theEvent.isController()) {
     if(theEvent.getController()==dropList1){
-      // System.out.println((byte)dropList1.getValue());
+      // System.out.println((byte)dropList1.getId());
       myPortRead.write(new byte[]{(byte)0x0B,(byte)dropList1.getValue()});
     }
     if(theEvent.getController()==dropList2){
-      // System.out.println((byte)dropList2.getValue());
-      myPortRead.write(new byte[]{(byte)0x0D,(byte)dropList2.getValue()});
+      // System.out.println((byte)dropList2.getId());
+      myPortRead.write(new byte[]{(byte)0x0D,(byte)(dropList2.getValue()+1)});
     }
   }
 }
