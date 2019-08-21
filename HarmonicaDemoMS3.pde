@@ -46,6 +46,8 @@ int kws_count = 0;
 // Serial readings
 ArrayList<String> scenarios = new ArrayList();
 ArrayList<Float> readings = new ArrayList();
+ArrayList<Float> window_score = new ArrayList();
+ArrayList<Float> keyword_score = new ArrayList();
 //Gain dictionary
 HashMap gainDict = new HashMap(); 
 //env
@@ -89,7 +91,7 @@ Mur[] murs;
 
 //GUI space
 float GUIHeight = 200;
-
+float kws_line_width = 0;
 //starting position of subes
 float startingZ = -10000;
 float maxZ = 1000;
@@ -106,7 +108,10 @@ void setup()
   event = "-";
   music = "Play";
   minim = new Minim(this);
-  envSound = minim.getLineIn(minim.MONO,8192,44100);
+  envSound = minim.getLineIn();
+  //GUI icon
+  PImage[] icons = {loadImage("button_play.png"),loadImage("button_pause.png")};
+  // envSound = minim.getLineIn(minim.MONO,8192,44100);
   song = minim.loadFile("RainRabbit.mp3"); 
   fft = new FFT(envSound.bufferSize(), envSound.sampleRate());
   //sampleRate = 44100;
@@ -115,6 +120,10 @@ void setup()
   //list length
   for(int i=0;i<48;i++){
     readings.add(0.0);
+  }
+  for(int i=0;i<200;i++){
+    window_score.add(0.0);
+    keyword_score.add(0.0);
   }
   //scenario list
   scenarios.add("Home");
@@ -140,19 +149,21 @@ void setup()
   // List all the available serial ports:
   printArray(Serial.list());
   
-
   //GUI elements
+  kws_line_width = (width/2-400)/200;
   cp5 = new ControlP5(this);
   cp5.addButton("button_play")
     // .setValue(0)
     .setPosition(width/2,height-150)
     .setSize(50,50)
+    .setImages(icons[0])
     ;
 
   cp5.addButton("button_pause")
     // .setValue(10)
     .setPosition(width/2+70,height-150)
     .setSize(50,50)
+    .setImages(icons[1])
     ;
 
   dropList1 = cp5.addDropdownList("gain")
@@ -167,11 +178,12 @@ void setup()
 
   //add more objects as music input
   nbCubes = (int)(fft.specSize()*specHi1);
+  // nbCubes = 64;
   cubes_env = new Cube[nbCubes];
   cubes_anc = new Cube[nbCubes];
   murs = new Mur[nbMurs];
   nbTetrahedrons = (int)(fft.specSize()*specHi2);
-  println(fft.specSize());
+  // println(fft.specSize());
   tetrahedrons = new Tetrahedron[nbTetrahedrons];
   
   //generate pairs of objects.
@@ -320,6 +332,7 @@ void draw()
     }
 
   float previousBandValue = fft.getBand(0);
+  // println(previousBandValue);
   
   //Distance between each line point, negative because on the z dimension
   float dist = -30;
@@ -380,12 +393,22 @@ void draw()
   // 2d code following
   fill(0,0,0,150);
   rect(0,height-GUIHeight,width, height);
+  fill(0,0);
+  stroke(255,255,255,255);
+  strokeWeight(1);
+  // rect(300,height-130,width/2-400,50);
+  //draw realtime kws result
+  for(int i=0;i<199;i++){
+    stroke(0,255,0,255);
+    line(300+i*kws_line_width,height-80-50*window_score.get(i),300+(i+1)*kws_line_width,height-80-50*window_score.get(i+1));
+    stroke(0,0,255,255);
+    line(300+i*kws_line_width,height-80-50*keyword_score.get(i),300+(i+1)*kws_line_width,height-80-50*keyword_score.get(i+1));
+  }
 
   //static UI element
   textSize(28);	
   textFont(titleBlack);
   fill(255);
-
   text("Environment", 400, 60);
   text("What You Hear", 1100, 60);
   textFont(label);
@@ -642,14 +665,19 @@ void customizeWord(DropdownList ddl) {
 
 void serialEvent(Serial port) {
   String input = port.readString(); 
-  System.out.println(input);
+  // System.out.println(input);
   float window;
   float kwsres;
   if (input != null) {
     println( "Receiving:" + input);
     float[] vals = float(split(input, ","));
     window = vals[0];
+    window_score.add(window);
+    window_score.subList(0,1).clear();
     kwsres = vals[1]; 
+    keyword_score.add(kwsres);
+    keyword_score.subList(0,1).clear();
+    print(keyword_score);
 
     for(int k=0;k<6;k++){
       readings.add(vals[k]);
