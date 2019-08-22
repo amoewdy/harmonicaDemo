@@ -115,10 +115,9 @@ void setup()
   }
   //scenario list
   scenarios.add("Home");
-  scenarios.add("Terminal");
   scenarios.add("Flight");
+  scenarios.add("Terminal");
   scenarios.add("Commute");
-
 
   // read input TBC 
   // myPortRead = new Serial(this,"/dev/tty.usbmodem316B336930381", 9600);
@@ -670,7 +669,7 @@ class Mur {
 
 void serialEvent(Serial port) {
   String input = port.readString(); 
-  // System.out.println(input);
+  System.out.println(input);
   float window;
   float kwsres;
   if (input != null) {
@@ -740,19 +739,19 @@ void serialEvent(Serial port) {
     float maxChancei = 0;
     float maxValue = Math.max(Math.max(Math.max(sum_home,sum_commute),sum_terminal),sum_flight);
     if(sum_home == maxValue){
-      scenario = scenarios.get(1);
+      scenario = scenarios.get(0);
       dim_color = 5;
     }
     else if(sum_commute == maxValue){
-      scenario = scenarios.get(2);
+      scenario = scenarios.get(1);
       dim_color = 10;
     }
     else if(sum_terminal == maxValue){
-      scenario = scenarios.get(3);
+      scenario = scenarios.get(2);
       dim_color = 30;
     }
     else{
-      scenario = scenarios.get(4);
+      scenario = scenarios.get(3);
       dim_color = 15;
     }
     }catch (Exception e) {
@@ -770,8 +769,10 @@ void serialEvent(Serial port) {
 public void PLAY(int theValue) {
   // System.out.println("button_play");
   try{
-  // myPortRead = new Serial(this,"/dev/tty.usbmodem316B336930381", 9600);
-  myPortRead = new Serial(this,"COM7",115200);
+  myPortRead = new Serial(this,"/dev/tty.usbmodem316B336930381", 9600);
+  // myPortRead = new Serial(this,"/dev/tty.usbmodem3764394F30381", 9600);   //backup board
+   
+  // myPortRead = new Serial(this,"COM7",115200);
   myPortRead.bufferUntil('\n');
   }catch (Exception e) {
     System.out.println("Serial already opened");
