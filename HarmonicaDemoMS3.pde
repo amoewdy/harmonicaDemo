@@ -720,33 +720,33 @@ void serialEvent(Serial port) {
 
     }
 
-    float sum_home = 0;
-    float sum_commute = 0;
-    float sum_terminal = 0;
-    float sum_flight = 0;
+    float sum_1 = 0;
+    float sum_2 = 0;
+    float sum_3 = 0;
+    float sum_4 = 0;
     for(int i=2;i<48;i+=6){
-      sum_home += readings.get(i);
+      sum_1 += readings.get(i);
     }
     for(int i=3;i<48;i+=6){
-      sum_commute += readings.get(i);
+      sum_2 += readings.get(i);
     }
     for(int i=4;i<48;i+=6){
-      sum_terminal += readings.get(i);
+      sum_3 += readings.get(i);
     }
     for(int i=5;i<48;i+=6){
-      sum_flight += readings.get(i);
+      sum_4 += readings.get(i);
     }
     float maxChancei = 0;
-    float maxValue = Math.max(Math.max(Math.max(sum_home,sum_commute),sum_terminal),sum_flight);
-    if(sum_home == maxValue){
+    float maxValue = Math.max(Math.max(Math.max(sum_1,sum_2),sum_3),sum_4);
+    if(sum_1 == maxValue){
       scenario = scenarios.get(0);
       dim_color = 5;
     }
-    else if(sum_commute == maxValue){
+    else if(sum_2 == maxValue){
       scenario = scenarios.get(1);
       dim_color = 10;
     }
-    else if(sum_terminal == maxValue){
+    else if(sum_3 == maxValue){
       scenario = scenarios.get(2);
       dim_color = 30;
     }
