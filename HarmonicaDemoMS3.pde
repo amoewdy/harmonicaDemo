@@ -486,7 +486,7 @@ class Tetrahedron{
     // color strokeColor = color(255, 150-(20*intensity));
     // color strokeColor = color(255, 0);
     // stroke(strokeColor);
-    strokeWeight(1);
+    strokeWeight(0);
     // strokeWeight(1 + (scoreGlobal/300));
     
     //Create a transformation matrix to perform rotations, enlargements
@@ -769,10 +769,10 @@ void serialEvent(Serial port) {
 public void PLAY(int theValue) {
   // System.out.println("button_play");
   try{
-  myPortRead = new Serial(this,"/dev/tty.usbmodem316B336930381", 9600);
+  // myPortRead = new Serial(this,"/dev/tty.usbmodem316B336930381", 9600);
   // myPortRead = new Serial(this,"/dev/tty.usbmodem3764394F30381", 9600);   //backup board
    
-  // myPortRead = new Serial(this,"COM7",115200);
+  myPortRead = new Serial(this,"COM7",115200);
   myPortRead.bufferUntil('\n');
   }catch (Exception e) {
     System.out.println("Serial already opened");
